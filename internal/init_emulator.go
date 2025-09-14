@@ -1,13 +1,10 @@
-package main
+package internal
 
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
-	"time"
 
-	"cloud.google.com/go/spanner"
 	dbadmin "cloud.google.com/go/spanner/admin/database/apiv1"
 	dbpb "cloud.google.com/go/spanner/admin/database/apiv1/databasepb"
 	instadmin "cloud.google.com/go/spanner/admin/instance/apiv1"
@@ -23,38 +20,12 @@ const (
 	databaseID = "test-db"
 )
 
-func main() {
-	ctx := context.Background()
+var (
+	parent = fmt.Sprintf("projects/%s/instances/%s", projectID, instanceID)
+	dbPath = fmt.Sprintf("%s/databases/%s", parent, databaseID)
+)
 
-	if container, err := setupSpannerEmulator(ctx); err != nil {
-		log.Fatalf("failed to start spanner emulator: %v", err)
-	} else {
-		defer container.Terminate(ctx)
-	}
-
-	if err := createSpannerInstance(ctx); err != nil {
-		log.Fatalf("failed to create spanner instance: %v", err)
-	}
-
-	dbPath, err := createSpannerDatabase(ctx)
-	if err != nil {
-		log.Fatalf("failed to create spanner database: %v", err)
-	}
-
-	client, err := spanner.NewClient(ctx, dbPath, option.WithoutAuthentication())
-	if err != nil {
-		log.Fatalf("failed to create spanner client: %v", err)
-	}
-	defer client.Close()
-
-	if err := execQuery(ctx, client); err != nil {
-		log.Fatalf("failed to execute query: %v", err)
-	}
-
-	time.Sleep(2 * time.Second)
-}
-
-func setupSpannerEmulator(ctx context.Context) (testcontainers.Container, error) {
+func InitSpannerEmulator(ctx context.Context) (testcontainers.Container, error) {
 	// Spanner Emulator の起動
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
@@ -78,7 +49,7 @@ func setupSpannerEmulator(ctx context.Context) (testcontainers.Container, error)
 	return container, nil
 }
 
-func createSpannerInstance(ctx context.Context) error {
+func CreateSpannerInstance(ctx context.Context) error {
 	instAdmin, err := instadmin.NewInstanceAdminClient(ctx, option.WithoutAuthentication())
 	if err != nil {
 		return err
@@ -108,15 +79,12 @@ func createSpannerInstance(ctx context.Context) error {
 	return nil
 }
 
-func createSpannerDatabase(ctx context.Context) (string, error) {
+func CreateSpannerDatabase(ctx context.Context) error {
 	dbAdmin, err := dbadmin.NewDatabaseAdminClient(ctx, option.WithoutAuthentication())
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer dbAdmin.Close()
-
-	parent := fmt.Sprintf("projects/%s/instances/%s", projectID, instanceID)
-	dbPath := fmt.Sprintf("%s/databases/%s", parent, databaseID)
 
 	dbOp, err := dbAdmin.CreateDatabase(ctx, &dbpb.CreateDatabaseRequest{
 		Parent:          parent,
@@ -129,38 +97,13 @@ func createSpannerDatabase(ctx context.Context) (string, error) {
 		},
 	})
 	if err != nil {
-		return "", err
+		return err
 	}
 	if _, err := dbOp.Wait(ctx); err != nil {
-		return "", err
+		return err
 	}
 	fmt.Println("Database created:", dbPath)
 	fmt.Println("")
-
-	return dbPath, nil
-}
-
-func execQuery(ctx context.Context, client *spanner.Client) error {
-	m := spanner.Insert("Users", []string{"UserID", "Name"}, []interface{}{"user-id-1", "name-1"})
-	_, err := client.Apply(ctx, []*spanner.Mutation{m})
-	if err != nil {
-		return err
-	}
-
-	iter := client.Single().Query(ctx, spanner.NewStatement("SELECT UserID, Name FROM Users"))
-	defer iter.Stop()
-
-	for {
-		row, err := iter.Next()
-		if err != nil {
-			break
-		}
-		var id, name string
-		if err := row.Columns(&id, &name); err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("User: ID=%s, Name=%s\n", id, name)
-	}
 
 	return nil
 }
