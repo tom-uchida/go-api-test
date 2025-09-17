@@ -13,6 +13,8 @@ Database created: projects/test-project/instances/test-instance/databases/test-d
 
 ## API test
 
+### Get User
+
 ```shell
 > runn run runbook/get_user.yaml
 {
@@ -33,6 +35,20 @@ Database created: projects/test-project/instances/test-instance/databases/test-d
     }
   ]
 }
+.
+
+1 scenario, 0 skipped, 0 failures
+```
+
+### SQL
+
+```shell
+> SPANNER_EMULATOR_HOST=localhost:55457 runn run runbook/sql.yaml
+[
+  {
+    "table_name": "Users"
+  }
+]
 .
 
 1 scenario, 0 skipped, 0 failures
