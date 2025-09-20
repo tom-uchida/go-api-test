@@ -25,9 +25,9 @@ func main() {
 		log.Fatalf("failed to create spanner instance: %v", err)
 	}
 
-	if err := internal.CreateSpannerDatabase(ctx); err != nil {
-		log.Fatalf("failed to create spanner database: %v", err)
-	}
+	// if err := internal.CreateSpannerDatabase(ctx); err != nil {
+	// 	log.Fatalf("failed to create spanner database: %v", err)
+	// }
 
 	http.HandleFunc("/create-user", internal.CreateUser)
 	http.HandleFunc("/get-user", internal.GetUser)

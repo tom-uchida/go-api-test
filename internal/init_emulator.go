@@ -56,13 +56,11 @@ func CreateSpannerInstance(ctx context.Context) error {
 	}
 	defer instAdmin.Close()
 
-	instPath := fmt.Sprintf("projects/%s/instances/%s", projectID, instanceID)
-
 	instOp, err := instAdmin.CreateInstance(ctx, &instpb.CreateInstanceRequest{
 		Parent:     fmt.Sprintf("projects/%s", projectID),
 		InstanceId: instanceID,
 		Instance: &instpb.Instance{
-			Name:        instPath,
+			Name:        parent,
 			Config:      "emulator-config", // emulator 固有の config 名
 			DisplayName: "Test Instance",
 			NodeCount:   1,
@@ -74,7 +72,7 @@ func CreateSpannerInstance(ctx context.Context) error {
 	if _, err := instOp.Wait(ctx); err != nil {
 		return err
 	}
-	fmt.Println("Instance created:", instPath)
+	fmt.Println("Instance created:", parent)
 
 	return nil
 }
