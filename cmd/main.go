@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -25,13 +26,13 @@ func main() {
 		log.Fatalf("failed to create spanner instance: %v", err)
 	}
 
-	// if err := internal.CreateSpannerDatabase(ctx); err != nil {
-	// 	log.Fatalf("failed to create spanner database: %v", err)
-	// }
-
+	http.HandleFunc("/drop-database", internal.DropDatabase)
+	http.HandleFunc("/create-database", internal.CreateDatabase)
 	http.HandleFunc("/create-user", internal.CreateUser)
 	http.HandleFunc("/get-user", internal.GetUser)
 
-	log.Printf("Server running on port %s", port)
+	fmt.Println("")
+	log.Printf("Server running at: localhost:%s", port)
+	fmt.Println("")
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

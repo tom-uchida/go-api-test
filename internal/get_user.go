@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -22,13 +23,20 @@ type User struct {
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
-	client, err := spanner.NewClient(ctx, dbPath, option.WithoutAuthentication())
+	databaseName := r.Header.Get("X-Database-Name")
+	if databaseName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	database := fmt.Sprintf("%s/databases/%s", parent, databaseName)
+
+	client, err := spanner.NewClient(ctx, database, option.WithoutAuthentication())
 	if err != nil {
 		log.Fatalf("failed to create spanner client: %v", err)
 	}
 	defer client.Close()
 
-	users, err := execQuery(ctx, client)
+	users, err := getUser(ctx, client)
 	if err != nil {
 		log.Fatalf("failed to execute query: %v", err)
 	}
@@ -44,7 +52,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func execQuery(ctx context.Context, client *spanner.Client) ([]*User, error) {
+func getUser(ctx context.Context, client *spanner.Client) ([]*User, error) {
 	iter := client.Single().Query(ctx, spanner.NewStatement("SELECT * FROM Users"))
 	defer iter.Stop()
 

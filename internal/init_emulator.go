@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	dbadmin "cloud.google.com/go/spanner/admin/database/apiv1"
-	dbpb "cloud.google.com/go/spanner/admin/database/apiv1/databasepb"
 	instadmin "cloud.google.com/go/spanner/admin/instance/apiv1"
 	instpb "cloud.google.com/go/spanner/admin/instance/apiv1/instancepb"
 	"github.com/testcontainers/testcontainers-go"
@@ -17,12 +15,10 @@ import (
 const (
 	projectID  = "test-project"
 	instanceID = "test-instance"
-	databaseID = "test-db"
 )
 
 var (
 	parent = fmt.Sprintf("projects/%s/instances/%s", projectID, instanceID)
-	dbPath = fmt.Sprintf("%s/databases/%s", parent, databaseID)
 )
 
 func InitSpannerEmulator(ctx context.Context) (testcontainers.Container, error) {
@@ -73,35 +69,6 @@ func CreateSpannerInstance(ctx context.Context) error {
 		return err
 	}
 	fmt.Println("Instance created:", parent)
-
-	return nil
-}
-
-func CreateSpannerDatabase(ctx context.Context) error {
-	dbAdmin, err := dbadmin.NewDatabaseAdminClient(ctx, option.WithoutAuthentication())
-	if err != nil {
-		return err
-	}
-	defer dbAdmin.Close()
-
-	dbOp, err := dbAdmin.CreateDatabase(ctx, &dbpb.CreateDatabaseRequest{
-		Parent:          parent,
-		CreateStatement: fmt.Sprintf("CREATE DATABASE `%s`", databaseID),
-		ExtraStatements: []string{
-			`CREATE TABLE Users (
-				UserID   STRING(36) NOT NULL,
-				Name     STRING(1024),
-			) PRIMARY KEY(UserID)`,
-		},
-	})
-	if err != nil {
-		return err
-	}
-	if _, err := dbOp.Wait(ctx); err != nil {
-		return err
-	}
-	fmt.Println("Database created:", dbPath)
-	fmt.Println("")
 
 	return nil
 }

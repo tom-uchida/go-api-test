@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -22,7 +23,14 @@ type CreateUserRes struct {
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
-	client, err := spanner.NewClient(ctx, dbPath, option.WithoutAuthentication())
+	databaseName := r.Header.Get("X-Database-Name")
+	if databaseName == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	database := fmt.Sprintf("%s/databases/%s", parent, databaseName)
+
+	client, err := spanner.NewClient(ctx, database, option.WithoutAuthentication())
 	if err != nil {
 		log.Fatalf("failed to create spanner client: %v", err)
 	}
@@ -32,7 +40,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Fatalf("failed to decode request body: %v", err)
 	}
-	userID, err := execCommand(ctx, client, req.Name)
+	userID, err := createUser(ctx, client, req.Name)
 	if err != nil {
 		log.Fatalf("failed to execute query: %v", err)
 	}
@@ -44,7 +52,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func execCommand(ctx context.Context, client *spanner.Client, userName string) (string, error) {
+func createUser(ctx context.Context, client *spanner.Client, userName string) (string, error) {
 	userID := uuid.New().String()
 	m := spanner.Insert("Users", []string{"UserID", "Name"}, []interface{}{userID, userName})
 	_, err := client.Apply(ctx, []*spanner.Mutation{m})
