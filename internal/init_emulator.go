@@ -39,7 +39,10 @@ func InitSpannerEmulator(ctx context.Context) (testcontainers.Container, error) 
 	host, _ := container.Host(ctx)
 	port, _ := container.MappedPort(ctx, "9010")
 	emulatorHost := fmt.Sprintf("%s:%s", host, port.Port())
+
+	// Spanner Emulator 用の環境変数をセット
 	os.Setenv("SPANNER_EMULATOR_HOST", emulatorHost)
+
 	fmt.Println("Spanner emulator running at:", emulatorHost)
 
 	return container, nil
@@ -57,7 +60,7 @@ func CreateSpannerInstance(ctx context.Context) error {
 		InstanceId: instanceID,
 		Instance: &instpb.Instance{
 			Name:        parent,
-			Config:      "emulator-config", // emulator 固有の config 名
+			Config:      "emulator-config",
 			DisplayName: "Test Instance",
 			NodeCount:   1,
 		},
