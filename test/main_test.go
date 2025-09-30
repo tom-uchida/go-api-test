@@ -31,6 +31,29 @@ var (
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 
+	// Spanner Emulator を起動
+	container, err := initSpannerEmulator(ctx)
+	if err != nil {
+		log.Fatalf("failed to start container: %v", err)
+	}
+
+	// インスタンスを作成
+	if err := setupInstance(ctx); err != nil {
+		log.Fatalf("failed to create instance: %v", err)
+	}
+
+	// テストを実行
+	code := m.Run()
+
+	// Spanner Emulator を停止
+	if err := container.Terminate(ctx); err != nil {
+		log.Printf("failed to terminate container: %v", err)
+	}
+
+	os.Exit(code)
+}
+
+func initSpannerEmulator(ctx context.Context) (testcontainers.Container, error) {
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:        "gcr.io/cloud-spanner-emulator/emulator:latest",
@@ -51,22 +74,14 @@ func TestMain(m *testing.M) {
 	// Spanner Emulator 用の環境変数をセット
 	os.Setenv("SPANNER_EMULATOR_HOST", emulatorHost)
 
-	code := m.Run()
-
-	// コンテナを停止
-	if err := container.Terminate(ctx); err != nil {
-		log.Printf("failed to terminate container: %v", err)
-	}
-
-	os.Exit(code)
+	return container, nil
 }
 
-// 各テストで使う DB を作成するヘルパー
-func setupDatabase(ctx context.Context, t *testing.T, databaseName, ddl string) (string, func()) {
+func setupInstance(ctx context.Context) error {
 	// インスタンス作成クライアント
 	instClient, err := instadmin.NewInstanceAdminClient(ctx, option.WithoutAuthentication())
 	if err != nil {
-		t.Fatalf("failed to create instance client: %v", err)
+		log.Fatalf("failed to create instance client: %v", err)
 	}
 	defer instClient.Close()
 
@@ -82,10 +97,15 @@ func setupDatabase(ctx context.Context, t *testing.T, databaseName, ddl string) 
 		},
 	})
 
+	return nil
+}
+
+// 各テストで使う DB を作成するヘルパー
+func setupDatabase(ctx context.Context, databaseName, ddl string) (string, func()) {
 	// データベース作成クライアント
 	dbAdmin, err := dbadmin.NewDatabaseAdminClient(ctx, option.WithoutAuthentication())
 	if err != nil {
-		t.Fatalf("failed to create db client: %v", err)
+		log.Fatalf("failed to create db client: %v", err)
 	}
 	defer dbAdmin.Close()
 
@@ -95,10 +115,10 @@ func setupDatabase(ctx context.Context, t *testing.T, databaseName, ddl string) 
 		ExtraStatements: []string{ddl},
 	})
 	if err != nil {
-		t.Fatalf("failed to create database: %v", err)
+		log.Fatalf("failed to create database: %v", err)
 	}
 	if _, err := dbOp.Wait(ctx); err != nil {
-		t.Fatalf("failed to create database: %v", err)
+		log.Fatalf("failed to create database: %v", err)
 	}
 	log.Println("Database created:", databaseName)
 	log.Println("")
@@ -123,7 +143,7 @@ func TestSomething(t *testing.T) {
 				UserID   STRING(36) NOT NULL,
 				Name     STRING(1024),
 			) PRIMARY KEY(UserID)`
-	dsn, cleanup := setupDatabase(ctx, t, databaseName, ddl)
+	dsn, cleanup := setupDatabase(ctx, databaseName, ddl)
 	defer cleanup()
 
 	// Spanner クライアントを作成

@@ -46,38 +46,40 @@ Instance created: projects/test-project/instances/test-instance
 ## Go test
 
 ```shell
-go test -v -run TestSomething ./cmd
-2025/09/28 23:54:16 github.com/testcontainers/testcontainers-go - Connected to docker: 
-  Server Version: 25.0.2
-  API Version: 1.44
+go test -v -run TestSomething ./test
+2025/09/30 14:52:17 github.com/testcontainers/testcontainers-go - Connected to docker: 
+  Server Version: 28.2.2
+  API Version: 1.50
   Operating System: Docker Desktop
-  Total Memory: 7941 MB
+  Total Memory: 7836 MB
+  Labels:
+    com.docker.desktop.address=unix:///Users/uchidatomomasa/Library/Containers/com.docker.docker/Data/docker-cli.sock
   Testcontainers for Go Version: v0.38.0
-  Resolved Docker Host: unix:///Users/uchidatomomasa/.docker/run/docker.sock
+  Resolved Docker Host: unix:///var/run/docker.sock
   Resolved Docker Socket Path: /var/run/docker.sock
-  Test SessionID: 42658028b18fbc08a7b7d3fba772f4aba49f789fe17e4d41f8b822a5e6fb129b
-  Test ProcessID: a038bef8-7f26-4daf-8ce6-7f470171fae1
-2025/09/28 23:54:17 🐳 Creating container for image gcr.io/cloud-spanner-emulator/emulator:latest
-2025/09/28 23:54:17 🐳 Creating container for image testcontainers/ryuk:0.12.0
-2025/09/28 23:54:17 ✅ Container created: 47b34b975ba0
-2025/09/28 23:54:17 🐳 Starting container: 47b34b975ba0
-2025/09/28 23:54:17 ✅ Container started: 47b34b975ba0
-2025/09/28 23:54:17 ⏳ Waiting for container id 47b34b975ba0 image: testcontainers/ryuk:0.12.0. Waiting for: &{Port:8080/tcp timeout:<nil> PollInterval:100ms skipInternalCheck:false skipExternalCheck:false}
-2025/09/28 23:54:17 🔔 Container is ready: 47b34b975ba0
-2025/09/28 23:54:17 ✅ Container created: ce3709923726
-2025/09/28 23:54:17 🐳 Starting container: ce3709923726
-2025/09/28 23:54:17 ✅ Container started: ce3709923726
-2025/09/28 23:54:17 ⏳ Waiting for container id ce3709923726 image: gcr.io/cloud-spanner-emulator/emulator:latest. Waiting for: &{timeout:<nil> Log:Cloud Spanner emulator running IsRegexp:false Occurrence:1 PollInterval:100ms check:<nil> submatchCallback:<nil> re:<nil> log:[]}
-2025/09/28 23:54:18 🔔 Container is ready: ce3709923726
+  Test SessionID: f590d4a35c00ef98bc6c263da3f8aebf3e493396f58df526837771f8eec00f17
+  Test ProcessID: beed3297-be16-4ac9-82d1-f724b54bd655
+2025/09/30 14:52:17 🐳 Creating container for image gcr.io/cloud-spanner-emulator/emulator:latest
+2025/09/30 14:52:17 🐳 Creating container for image testcontainers/ryuk:0.12.0
+2025/09/30 14:52:17 ✅ Container created: beae3315da83
+2025/09/30 14:52:17 🐳 Starting container: beae3315da83
+2025/09/30 14:52:17 ✅ Container started: beae3315da83
+2025/09/30 14:52:17 ⏳ Waiting for container id beae3315da83 image: testcontainers/ryuk:0.12.0. Waiting for: &{Port:8080/tcp timeout:<nil> PollInterval:100ms skipInternalCheck:false skipExternalCheck:false}
+2025/09/30 14:52:17 🔔 Container is ready: beae3315da83
+2025/09/30 14:52:17 ✅ Container created: 3e88228104c5
+2025/09/30 14:52:17 🐳 Starting container: 3e88228104c5
+2025/09/30 14:52:17 ✅ Container started: 3e88228104c5
+2025/09/30 14:52:17 ⏳ Waiting for container id 3e88228104c5 image: gcr.io/cloud-spanner-emulator/emulator:latest. Waiting for: &{timeout:<nil> Log:Cloud Spanner emulator running IsRegexp:false Occurrence:1 PollInterval:100ms check:<nil> submatchCallback:<nil> re:<nil> log:[]}
+2025/09/30 14:52:18 🔔 Container is ready: 3e88228104c5
 === RUN   TestSomething
-2025/09/28 23:54:18 Database created: test-db
-2025/09/28 23:54:18 
-2025/09/28 23:54:18 user: a9067508-de71-42f6-b03c-32d0436b0542 user-name
---- PASS: TestSomething (0.08s)
+2025/09/30 14:52:18 Database created: test-db
+2025/09/30 14:52:18 
+2025/09/30 14:52:18 user: ea1257cf-021f-4e78-ace7-c9e22446618e user-name
+--- PASS: TestSomething (0.02s)
 PASS
-2025/09/28 23:54:18 🐳 Stopping container: ce3709923726
-2025/09/28 23:54:18 ✅ Container stopped: ce3709923726
-2025/09/28 23:54:18 🐳 Terminating container: ce3709923726
-2025/09/28 23:54:18 🚫 Container terminated: ce3709923726
-ok  github.com/tom-uchida/go-spanner-emulator/cmd (cached)
+2025/09/30 14:52:18 🐳 Stopping container: 3e88228104c5
+2025/09/30 14:52:19 ✅ Container stopped: 3e88228104c5
+2025/09/30 14:52:19 🐳 Terminating container: 3e88228104c5
+2025/09/30 14:52:19 🚫 Container terminated: 3e88228104c5
+ok  	github.com/tom-uchida/go-spanner-emulator/test	2.018s
 ```
