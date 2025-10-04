@@ -9,8 +9,6 @@ import (
 
 	"cloud.google.com/go/spanner"
 	dbpb "cloud.google.com/go/spanner/admin/database/apiv1/databasepb"
-	instadmin "cloud.google.com/go/spanner/admin/instance/apiv1"
-	instpb "cloud.google.com/go/spanner/admin/instance/apiv1/instancepb"
 	"github.com/google/uuid"
 	"google.golang.org/api/option"
 
@@ -40,30 +38,11 @@ func TestMain(m *testing.M) {
 }
 
 // 各テストで使う DB を作成するヘルパー
-func setupDatabase(ctx context.Context, t *testing.T, ddl string) (string, func()) {
-	// インスタンス作成クライアント
-	instClient, err := instadmin.NewInstanceAdminClient(ctx, option.WithoutAuthentication())
-	if err != nil {
-		t.Fatalf("failed to create instance client: %v", err)
-	}
-	defer instClient.Close()
-
-	// インスタンス作成（初回のみ idempotent）
-	_, _ = instClient.CreateInstance(ctx, &instpb.CreateInstanceRequest{
-		Parent:     parent,
-		InstanceId: instanceID,
-		Instance: &instpb.Instance{
-			Name:        parent,
-			Config:      "emulator-config",
-			DisplayName: "Test Instance",
-			NodeCount:   1,
-		},
-	})
-
+func setupDatabase(ctx context.Context, ddl string) (string, func()) {
 	// データベース作成クライアント
 	dbAdmin, err := dbadmin.NewDatabaseAdminClient(ctx, option.WithoutAuthentication())
 	if err != nil {
-		t.Fatalf("failed to create db client: %v", err)
+		log.Fatalf("failed to create db client: %v", err)
 	}
 	defer dbAdmin.Close()
 
@@ -74,10 +53,10 @@ func setupDatabase(ctx context.Context, t *testing.T, ddl string) (string, func(
 		ExtraStatements: []string{ddl},
 	})
 	if err != nil {
-		t.Fatalf("failed to create database: %v", err)
+		log.Fatalf("failed to create database: %v", err)
 	}
 	if _, err := dbOp.Wait(ctx); err != nil {
-		t.Fatalf("failed to create database: %v", err)
+		log.Fatalf("failed to create database: %v", err)
 	}
 	log.Println("Database created:", dbName)
 	log.Println("")
@@ -101,7 +80,7 @@ func TestSomething(t *testing.T) {
 				UserID   STRING(36) NOT NULL,
 				Name     STRING(1024),
 			) PRIMARY KEY(UserID)`
-	dsn, cleanup := setupDatabase(ctx, t, ddl)
+	dsn, cleanup := setupDatabase(ctx, ddl)
 	defer cleanup()
 
 	// Spanner クライアントを作成
