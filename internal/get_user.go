@@ -3,12 +3,10 @@ package internal
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
 	"cloud.google.com/go/spanner"
-	"google.golang.org/api/option"
 )
 
 type GetUserRes struct {
@@ -20,36 +18,25 @@ type User struct {
 	Name   string `json:"name"`
 }
 
-func GetUser(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+func GetUserHandler(client *spanner.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.Background()
 
-	databaseName := r.Header.Get("X-Database-Name")
-	if databaseName == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	database := fmt.Sprintf("%s/databases/%s", parent, databaseName)
+		users, err := getUser(ctx, client)
+		if err != nil {
+			log.Fatalf("failed to execute query: %v", err)
+		}
+		if users == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 
-	client, err := spanner.NewClient(ctx, database, option.WithoutAuthentication())
-	if err != nil {
-		log.Fatalf("failed to create spanner client: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(GetUserRes{
+			Users: users,
+		})
 	}
-	defer client.Close()
-
-	users, err := getUser(ctx, client)
-	if err != nil {
-		log.Fatalf("failed to execute query: %v", err)
-	}
-	if users == nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(GetUserRes{
-		Users: users,
-	})
 }
 
 func getUser(ctx context.Context, client *spanner.Client) ([]*User, error) {

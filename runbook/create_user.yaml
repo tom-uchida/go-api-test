@@ -2,36 +2,19 @@ desc: ユーザー作成APIのテスト
 
 runners:
   req: http://localhost:8080
-  local: spanner://test-project/test-instance/create-user
+  dsn: spanner://test-project/test-instance/test-db
 
 vars:
-  databaseName: "create-user"
   tableName: "Users"
   userNames: ["test-name-1", "test-name-2"]
 
 steps:
-  create-database:
-    desc: "データベース作成"
-    req:
-      /create-database:
-        post:
-          body:
-            application/json:
-              database_name: "{{ vars.databaseName }}"
-              table_name: "{{ vars.tableName }}"
-    test: |
-      current.res.status == 200
-    dump:
-      expr: current.res.body
-  
   create-user:
     desc: "ユーザー作成"
     loop: len(vars.userNames)
     req:
       /create-user:
         post:
-          headers:
-            X-Database-Name: "{{ vars.databaseName }}"
           body:
             application/json:
               name: "{{ vars.userNames[i] }}"
@@ -42,7 +25,7 @@ steps:
 
   select-table:
     desc: "Usersテーブルの確認"
-    local:
+    dsn:
       query: |
         SELECT *
         FROM "{{ vars.tableName }}"
@@ -50,16 +33,3 @@ steps:
       len(current.rows) == len(vars.userNames)
     dump:
       expr: current.rows
-  
-  drop-database:
-    desc: "データベース削除"
-    req:
-      /drop-database:
-        post:
-          body:
-            application/json:
-              database_name: "{{ vars.databaseName }}"
-    test: |
-      current.res.status == 200
-    dump:
-      expr: current.res.body

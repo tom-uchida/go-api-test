@@ -4,11 +4,11 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 
-	"github.com/tom-uchida/go-spanner-emulator/internal"
+	"github.com/tom-uchida/go-api-test/internal"
+	"github.com/tom-uchida/go-api-test/internal/db"
 )
 
 const port = "8080"
@@ -16,23 +16,23 @@ const port = "8080"
 func main() {
 	ctx := context.Background()
 
-	if container, err := internal.InitSpannerEmulator(ctx); err != nil {
-		log.Fatalf("failed to start spanner emulator: %v", err)
-	} else {
-		defer container.Terminate(ctx)
-	}
-
-	if err := internal.CreateSpannerInstance(ctx); err != nil {
+	parent, err := db.CreateSpannerInstance(ctx)
+	if err != nil {
 		log.Fatalf("failed to create spanner instance: %v", err)
 	}
+	dsn, err := db.CreateDatabase(ctx, parent)
+	if err != nil {
+		log.Fatalf("failed to create database: %v", err)
+	}
+	client, err := db.NewClient(ctx, dsn)
+	if err != nil {
+		log.Fatalf("failed to create spanner client: %v", err)
+	}
+	defer client.Close()
 
-	http.HandleFunc("/drop-database", internal.DropDatabase)
-	http.HandleFunc("/create-database", internal.CreateDatabase)
-	http.HandleFunc("/create-user", internal.CreateUser)
-	http.HandleFunc("/get-user", internal.GetUser)
+	http.HandleFunc("/create-user", internal.CreateUserHandler(client))
+	http.HandleFunc("/get-user", internal.GetUserHandler(client))
 
-	fmt.Println("")
-	log.Printf("Server running at: localhost:%s", port)
-	fmt.Println("")
+	log.Printf("\nServer running at: localhost:%s\n", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  api-server:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - spanner-emulator
+    environment:
+      - SPANNER_EMULATOR_HOST=spanner-emulator:9010
+      - PROJECT_ID=test-project
+      - INSTANCE_ID=test-instance
+      - DB_NAME=test-db
+
+  spanner-emulator:
+    image: gcr.io/cloud-spanner-emulator/emulator:latest
+    ports:
+      - "9010:9010"
+      - "9020:9020"
